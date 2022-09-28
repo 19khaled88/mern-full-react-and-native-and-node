@@ -28,4 +28,14 @@ router
   .route('/delete/:id')
   .delete(isAuthenticatedUser, isAuthorized, productController.deleteProduct) //route is '/api/v2/product/delete/:id' ( delete product )
 
+//create review and update the review
+router
+  .route('/review/')
+  .get(productController.getSingleProductReivews)
+  .post(isAuthenticatedUser, productController.createProductReview)
+  .delete(
+    isAuthenticatedUser,
+    isAuthorized('admin'),
+    productController.deleteReview,
+  )
 module.exports = router

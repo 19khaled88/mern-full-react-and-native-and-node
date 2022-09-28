@@ -204,7 +204,89 @@ exports.createProductReview = async (req, res, next) => {
     rating,
     comment,
   }
-  const product = await Product.findById(userId)
+  const product = await Product.findById(productId)
 
-  // const isViewed=product.reviews.find((rev)=>rev.user.toString() === req.)
+  const isReviewed = product.reviews.find(
+    (rev) => rev.user.toString() === userId.toString(),
+  )
+
+  if (isReviewed) {
+    product.reviews.forEach((rev) => {
+      if (rev.user.toString() === userId)
+        (rev.rating = rating), (rev.comment = comment)
+    })
+  } else {
+    product.reviews.push(review)
+    product.numOfReviews = product.reviews.length
+  }
+
+  let avg = 0
+  product.reviews.forEach((rev) => {
+    avg += rev.rating
+  })
+
+  product.ratings = avg / product.reviews.length
+  await product.save({ validateBeforeSave: false })
+
+  res.status(200).json({
+    success: true,
+  })
+}
+
+//get all reviews of a singl product
+exports.getSingleProductReivews = async (req, res, next) => {
+  const product = await Product.findById(req.query.id)
+  if (!product) {
+    return res.send('Product is not found with this id')
+  }
+
+  res.status(200).json({
+    succes: true,
+    reviews: product.reviews,
+  })
+}
+
+//delete review
+exports.deleteReview = async (req, res, next) => {
+  const product = await Product.findById(req.query.id)
+
+  if (!product) {
+    return res.send('No product found with this id')
+  }
+
+  const reviews = product.reviews.filter(
+    (rev) => rev._id.toString() === req.query.revId.toString(),
+  )
+
+  let avg = 0
+  reviews.forEach((rev) => {
+    avg += rev.rating
+  })
+
+  let ratings = 0
+  if (reviews.length === 0) {
+    ratings = 0
+  } else {
+    ratings = avg / reviews.length
+  }
+
+  const numOfReviews = reviews.length
+
+  await Product.findByIdAndUpdate(
+    req.query.id,
+    {
+      reviews,
+      ratings,
+      numOfReviews,
+    },
+    {
+      new: true,
+      runValidators: true,
+      useFindAndModify: false,
+    },
+  )
+
+  res.status(200).json({
+    success: true,
+  })
 }
